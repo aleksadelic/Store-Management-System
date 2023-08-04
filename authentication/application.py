@@ -1,7 +1,9 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 from configuration import Configuration
-from models import database, User, Role, UserRole
-from email.utils import parseaddr
+from models import database, User, UserRole
+import re
+
+EMAIL_REGEX = re.compile(r"^[a-z0-9\.]+@([a-z0-9]+\.)+[a-z]{2,4}$")
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
@@ -14,27 +16,55 @@ def index():
 
 @application.route("/register_customer", methods=["POST"])
 def register_customer():
-    forename = request.json.get("forename", "")
-    surname = request.json.get("surname", "")
-    email = request.json.get("email", "")
-    password = request.json.get("password", "")
+    return register(request, 2)
 
-    if forename == "" or surname == "" or email == "" or password == "":
-        return Response("All fields are required!", status=400)
 
-    # ne radi dobro izgleda
-    if len(parseaddr(email)) == 0:
-        return Response("Email invalid!", status=400)
+@application.route("/register_courier", methods=["POST"])
+def register_courier():
+    return register(request, 3)
+
+
+def register(my_request, role_id):
+    forename = my_request.json.get("forename", "")
+    surname = my_request.json.get("surname", "")
+    email = my_request.json.get("email", "")
+    password = my_request.json.get("password", "")
+
+    if forename == "":
+        response = {"message": "Field forename is missing."}
+        return response, 400
+    if surname == "":
+        response = {"message": "Field surname is missing."}
+        return response, 400
+    if email == "":
+        response = {"message": "Field email is missing."}
+        return response, 400
+    if password == "":
+        response = {"message": "Field password is missing."}
+        return response, 400
+
+    if not EMAIL_REGEX.match(email):
+        response = {"message": "Invalid email."}
+        return response, 400
+
+    if len(password) < 8:
+        response = {"message": "Invalid password."}
+        return response, 400
+
+    user = User.query.filter(User.email == email).first()
+    if user:
+        response = {"message": "Email already exists."}
+        return response, 400
 
     user = User(forename=forename, surname=surname, email=email, password=password)
     database.session.add(user)
     database.session.commit()
 
-    user_role = UserRole(user_id=user.id, role_id=2)
+    user_role = UserRole(user_id=user.id, role_id=role_id)
     database.session.add(user_role)
     database.session.commit()
 
-    return Response("Registration successful!", status=200)
+    return Response(status=200)
 
 
 if __name__ == "__main__":

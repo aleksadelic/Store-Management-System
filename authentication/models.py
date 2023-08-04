@@ -4,7 +4,7 @@ database = SQLAlchemy()
 
 
 class UserRole(database.Model):
-    __tablename__ = "userRole"
+    __tablename__ = "user_role"
 
     id = database.Column(database.Integer, primary_key=True)
     user_id = database.Column(database.Integer, database.ForeignKey("users.id"), nullable=False)

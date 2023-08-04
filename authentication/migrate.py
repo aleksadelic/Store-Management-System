@@ -20,10 +20,12 @@ with application.app_context() as context:
     upgrade()
 
     admin_role = Role(name="admin")
-    user_role = Role(name="user")
+    customer_role = Role(name="customer")
+    courier_role = Role(name="courier")
 
     database.session.add(admin_role)
-    database.session.add(user_role)
+    database.session.add(customer_role)
+    database.session.add(courier_role)
     database.session.commit()
 
     admin = User(email="admin@admin.com", password="123", forename="admin", surname="admin")
@@ -32,3 +34,6 @@ with application.app_context() as context:
     database.session.commit()
 
     user_role = UserRole(user_id=admin.id, role_id=admin_role.id)
+
+    database.session.add(user_role)
+    database.session.commit()
