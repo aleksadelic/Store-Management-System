@@ -27,7 +27,7 @@ services:
     depends_on:
       - authenticationDBMigration
     ports:
-    - 5002:5002
+    - 5000:5000
 
 volumes:
   dbdata:
