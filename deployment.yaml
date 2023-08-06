@@ -1,6 +1,11 @@
 version: '3'
 
 services:
+  adminer:
+    image: adminer
+    ports:
+      - 8080:8080
+
   authenticationDB:
     image: mysql
     environment:
@@ -10,7 +15,7 @@ services:
       timeout: 10s
       retries: 10
     volumes:
-    - dbdata:/var/lib/mysql
+    - authenticationDBdata:/var/lib/mysql
 
   authenticationDBMigration:
     image: authenticationdbmigration
@@ -29,5 +34,43 @@ services:
     ports:
     - 5000:5000
 
+  storeDB:
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 10s
+      retries: 10
+    volumes:
+      - storeDBdata:/var/lib/mysql
+
+  storeDBMigration:
+    image: storedbmigration
+    environment:
+      - DATABASE_URL=storeDB
+    depends_on:
+      storeDB:
+        condition: service_healthy
+
+  owner:
+    image: owner
+    environment:
+      - DATABASE_URL=storeDB
+    depends_on:
+      - storeDBMigration
+    ports:
+      - 5001:5001
+
+  customer:
+    image: customer
+    environment:
+      - DATABASE_URL=storeDB
+    depends_on:
+      - storeDBMigration
+    ports:
+      - 5002:5002
+
 volumes:
-  dbdata:
+  authenticationDBdata:
+  storeDBdata:

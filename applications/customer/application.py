@@ -1,11 +1,10 @@
-from flask import Flask, request, Response, jsonify
-from applications.configuration import Configuration
-from applications.models import database, Product, Category, ProductCategory
+from flask import Flask, request, jsonify
+from configuration import Configuration
+from models import database, Product, Category, ProductCategory
 from sqlalchemy import and_
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, decode_token, \
-    create_refresh_token, get_jwt
-import io
-import csv
+from flask_jwt_extended import JWTManager, jwt_required
+from role_check_decorator import role_check
+
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
@@ -20,7 +19,11 @@ def index():
 
 @application.route("/search", methods=["GET"])
 @jwt_required()
+@role_check(role="customer")
 def search():
+    if "Authorization" not in request.headers:
+        return jsonify(msg="Missing Authorization Header"), 401
+
     name = request.args.get("name", "")
     category = request.args.get("category", "")
 

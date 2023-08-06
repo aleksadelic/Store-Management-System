@@ -2,7 +2,7 @@ from flask import Flask, request, Response, jsonify
 from configuration import Configuration
 from models import database, User, UserRole
 from sqlalchemy import and_
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, decode_token, create_refresh_token, get_jwt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import re
 
 EMAIL_REGEX = re.compile(r"^[a-z0-9\.]+@([a-z0-9]+\.)+[a-z]{2,4}$")
@@ -101,32 +101,8 @@ def login():
     }
 
     access_token = create_access_token(identity=user.email, additional_claims=additional_claims)
-    refresh_token = create_refresh_token(identity=user.email, additional_claims=additional_claims)
 
-    response = {"accessToken": access_token}
-
-    return jsonify(accessToken=access_token, refreshToken=refresh_token), 200
-
-
-@application.route("/check", methods=["POST"])
-@jwt_required()
-def check():
-    return "Token is valid"
-
-
-@application.route("/refresh", methods=["POST"])
-@jwt_required(refresh=True)
-def refresh():
-    identity = get_jwt_identity()
-    refresh_claims = get_jwt()
-
-    additional_claims = {
-        "forename": refresh_claims["forename"],
-        "surname": refresh_claims["surname"],
-        "roles": refresh_claims["roles"]
-    }
-
-    return Response(create_access_token(identity=identity, additional_claims=additional_claims), status=200)
+    return jsonify(accessToken=access_token), 200
 
 
 @application.route("/delete", methods=["POST"])
