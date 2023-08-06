@@ -1,9 +1,9 @@
 from flask import Flask, request, jsonify
-from applications.configuration import Configuration
-from applications.models import database, Product, Category, ProductCategory, Order, Item
+from configuration import Configuration
+from models import database, Product, Category, ProductCategory, Order, Item
 from sqlalchemy import and_
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
-from applications.role_check_decorator import role_check
+from role_check_decorator import role_check
 import datetime
 
 application = Flask(__name__)
@@ -53,7 +53,7 @@ def search():
 @role_check(role="customer")
 def order():
     if not request.data or "requests" not in request.json:
-        return jsonify(message="Field requests is missing"), 400
+        return jsonify(message="Field requests is missing."), 400
 
     ind = 0
     requests = request.json["requests"]

@@ -1,10 +1,10 @@
 from flask import Flask, request, Response, jsonify
-from applications.configuration import Configuration
-from applications.models import database, Product, Category, ProductCategory
+from configuration import Configuration
+from models import database, Product, Category, ProductCategory
 from flask_jwt_extended import JWTManager, jwt_required
 import io
 import csv
-from applications.role_check_decorator import role_check
+from role_check_decorator import role_check
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
@@ -21,9 +21,6 @@ def index():
 @jwt_required()
 @role_check(role="owner")
 def update():
-    if "Authorization" not in request.headers:
-        return jsonify(msg="Missing Authorization Header"), 401
-
     if "file" not in request.files:
         return jsonify(message="Field file is missing."), 400
 
