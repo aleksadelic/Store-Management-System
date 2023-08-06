@@ -20,6 +20,9 @@ class Product(database.Model):
 
     categories = database.relationship("Category", secondary=ProductCategory.__table__, back_populates="products")
 
+    def __repr__(self):
+        return self.name
+
 
 class Category(database.Model):
     __tablename__ = "categories"
@@ -28,5 +31,8 @@ class Category(database.Model):
     name = database.Column(database.String(256), nullable=False)
 
     products = database.relationship("Product", secondary=ProductCategory.__table__, back_populates="categories")
+
+    def __repr__(self):
+        return self.name
 
 
