@@ -132,6 +132,8 @@ def refresh():
 @application.route("/delete", methods=["POST"])
 @jwt_required()
 def delete_user():
+    if "Authorization" not in request.headers:
+        return jsonify(msg="Missing Authorization Header"), 401
     # token = decode_token(request.headers["Authorization"].split(" ")[1])
     # email = token["sub"]
 
