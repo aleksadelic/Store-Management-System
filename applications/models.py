@@ -11,6 +11,15 @@ class ProductCategory(database.Model):
     category_id = database.Column(database.Integer, database.ForeignKey("categories.id"), nullable=False)
 
 
+class Item(database.Model):
+    __tablename__ = "items"
+
+    id = database.Column(database.Integer, primary_key=True)
+    order_id = database.Column(database.Integer, database.ForeignKey("orders.id"), nullable=False)
+    product_id = database.Column(database.Integer, database.ForeignKey("products.id"), nullable=False)
+    quantity = database.Column(database.Integer, nullable=False)
+
+
 class Product(database.Model):
     __tablename__ = "products"
 
@@ -19,6 +28,7 @@ class Product(database.Model):
     price = database.Column(database.Float, nullable=False)
 
     categories = database.relationship("Category", secondary=ProductCategory.__table__, back_populates="products")
+    orders = database.relationship("Order", secondary=Item.__table__, back_populates="products")
 
     def __repr__(self):
         return self.name
@@ -35,4 +45,15 @@ class Category(database.Model):
     def __repr__(self):
         return self.name
 
+
+class Order(database.Model):
+    __tablename__ = "orders"
+
+    id = database.Column(database.Integer, primary_key=True)
+    customer = database.Column(database.String(256), nullable=False)
+    price = database.Column(database.Float, nullable=False)
+    status = database.Column(database.String(256), nullable=False)
+    timestamp = database.Column(database.DateTime, nullable=False)
+
+    products = database.relationship("Product", secondary=Item.__table__, back_populates="orders")
 

@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify
-from configuration import Configuration
-from models import database, Product, Category, ProductCategory
+from applications.configuration import Configuration
+from applications.models import database, Product, Category, ProductCategory, Order, Item
 from sqlalchemy import and_
-from flask_jwt_extended import JWTManager, jwt_required
-from role_check_decorator import role_check
-
+from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
+from applications.role_check_decorator import role_check
+import datetime
 
 application = Flask(__name__)
 application.config.from_object(Configuration)
@@ -21,9 +21,6 @@ def index():
 @jwt_required()
 @role_check(role="customer")
 def search():
-    if "Authorization" not in request.headers:
-        return jsonify(msg="Missing Authorization Header"), 401
-
     name = request.args.get("name", "")
     category = request.args.get("category", "")
 
@@ -49,6 +46,59 @@ def search():
         product_response.append(product_json)
 
     return jsonify(categories=list(category_response), products=product_response), 200
+
+
+@application.route("/order", methods=["POST"])
+@jwt_required()
+@role_check(role="customer")
+def order():
+    if not request.data or "requests" not in request.json:
+        return jsonify(message="Field requests is missing"), 400
+
+    ind = 0
+    requests = request.json["requests"]
+    for req in requests:
+        if "id" not in req:
+            return jsonify(message="Product id is missing for request number {}.".format(ind)), 400
+        if "quantity" not in req:
+            return jsonify(message="Product quantity is missing for request number {}.".format(ind)), 400
+        if not isinstance(req["id"], int) or req["id"] < 0:
+            return jsonify(message="Invalid product id for request number {}.".format(ind)), 400
+        if not isinstance(req["quantity"], int) or req["quantity"] < 0:
+            return jsonify(message="Invalid product quantity for request number {}.".format(ind)), 400
+
+        product = Product.query.filter(Product.id == req["id"]).first()
+        if not product:
+            return jsonify(message="Invalid product for request number {}.".format(ind)), 400
+        ind += 1
+
+    customer = get_jwt_identity()
+    total_price = 0
+    order = Order(customer=customer, price=total_price, status="CREATED",
+                  timestamp=datetime.datetime.now().isoformat())
+
+    database.session.add(order)
+    database.session.commit()
+
+    items = []
+    for req in requests:
+        item = Item(order_id=order.id, product_id=req["id"], quantity=req["quantity"])
+        items.append(item)
+        product = Product.query.filter(Product.id == req["id"]).first()
+        total_price += product.price * req["quantity"]
+
+    database.session.add_all(items)
+    database.session.commit()
+
+    order.price = total_price
+    database.session.commit()
+
+    return jsonify(id=order.id), 200
+
+
+
+
+
 
 
 if __name__ == "__main__":
