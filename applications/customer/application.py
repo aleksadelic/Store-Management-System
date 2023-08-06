@@ -96,7 +96,37 @@ def order():
     return jsonify(id=order.id), 200
 
 
+@application.route("/status", methods=["GET"])
+@jwt_required()
+@role_check(role="customer")
+def status():
+    customer = get_jwt_identity()
+    orders = Order.query.filter(Order.customer == customer).all()
+    orders_json = []
+    for order in orders:
+        items = Item.query.filter(Item.order_id == order.id).all()
 
+        products = []
+        for item in items:
+            product = Product.query.filter(Product.id == item.product_id).first()
+            categories = Category.query.join(ProductCategory).filter(ProductCategory.product_id == product.id).all()
+            product_json = {
+                "categories": [str(category) for category in categories],
+                "name": product.name,
+                "price": product.price,
+                "quantity": item.quantity
+            }
+            products.append(product_json)
+
+        order_json = {
+            "products": products,
+            "price": order.price,
+            "status": order.status,
+            "timestamp": order.timestamp
+        }
+        orders_json.append(order_json)
+
+    return jsonify(orders=orders_json), 200
 
 
 
