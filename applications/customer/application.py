@@ -1,9 +1,9 @@
 from flask import Flask, request, jsonify, Response
-from applications.configuration import Configuration
-from applications.models import database, Product, Category, ProductCategory, Order, Item
+from configuration import Configuration
+from models import database, Product, Category, ProductCategory, Order, Item
 from sqlalchemy import and_
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
-from applications.role_check_decorator import role_check
+from role_check_decorator import role_check
 import datetime
 
 application = Flask(__name__)

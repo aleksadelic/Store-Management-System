@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify, Response
-from applications.configuration import Configuration
-from applications.models import database, Order
+from configuration import Configuration
+from models import database, Order
 from flask_jwt_extended import JWTManager, jwt_required
-from applications.role_check_decorator import role_check
+from role_check_decorator import role_check
 
 application = Flask(__name__)
 application.config.from_object(Configuration)

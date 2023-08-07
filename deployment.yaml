@@ -71,6 +71,15 @@ services:
     ports:
       - 5002:5002
 
+  courier:
+    image: courier
+    environment:
+      - DATABASE_URL=storeDB
+    depends_on:
+      - storeDBMigration
+    ports:
+      - 5003:5003
+
 volumes:
   authenticationDBdata:
   storeDBdata:
