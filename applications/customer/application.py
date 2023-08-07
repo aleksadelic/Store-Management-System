@@ -1,9 +1,9 @@
-from flask import Flask, request, jsonify
-from configuration import Configuration
-from models import database, Product, Category, ProductCategory, Order, Item
+from flask import Flask, request, jsonify, Response
+from applications.configuration import Configuration
+from applications.models import database, Product, Category, ProductCategory, Order, Item
 from sqlalchemy import and_
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
-from role_check_decorator import role_check
+from applications.role_check_decorator import role_check
 import datetime
 
 application = Flask(__name__)
@@ -129,6 +129,26 @@ def status():
     return jsonify(orders=orders_json), 200
 
 
+@application.route("/delivered", methods=["POST"])
+@jwt_required()
+@role_check(role="customer")
+def confirm_order_delivery():
+    if not request.data or "id" not in request.json:
+        return jsonify(message="Missing order id."), 400
+
+    order_id = request.json["id"]
+    if not isinstance(order_id, int) or order_id <= 0:
+        return jsonify(message="Invalid order id."), 400
+
+    order = Order.query.filter(Order.id == order_id).first()
+
+    if not order or order.status != "PENDING":
+        return jsonify(message="Invalid order id."), 400
+
+    order.status = "COMPLETE"
+    database.session.commit()
+
+    return Response(status=200)
 
 
 if __name__ == "__main__":
