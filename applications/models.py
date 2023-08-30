@@ -11,15 +11,6 @@ class ProductCategory(database.Model):
     category_id = database.Column(database.Integer, database.ForeignKey("categories.id"), nullable=False)
 
 
-class Item(database.Model):
-    __tablename__ = "items"
-
-    id = database.Column(database.Integer, primary_key=True)
-    order_id = database.Column(database.Integer, database.ForeignKey("orders.id"), nullable=False)
-    product_id = database.Column(database.Integer, database.ForeignKey("products.id"), nullable=False)
-    quantity = database.Column(database.Integer, nullable=False)
-
-
 class Product(database.Model):
     __tablename__ = "products"
 
@@ -28,7 +19,7 @@ class Product(database.Model):
     price = database.Column(database.Float, nullable=False)
 
     categories = database.relationship("Category", secondary=ProductCategory.__table__, back_populates="products")
-    orders = database.relationship("Order", secondary=Item.__table__, back_populates="products")
+    items = database.relationship("Item", back_populates="product")
 
     def __repr__(self):
         return self.name
@@ -55,5 +46,16 @@ class Order(database.Model):
     status = database.Column(database.String(256), nullable=False)
     timestamp = database.Column(database.DateTime, nullable=False)
 
-    products = database.relationship("Product", secondary=Item.__table__, back_populates="orders")
+    items = database.relationship("Item", back_populates="order")
 
+
+class Item(database.Model):
+    __tablename__ = "items"
+
+    id = database.Column(database.Integer, primary_key=True)
+    order_id = database.Column(database.Integer, database.ForeignKey("orders.id"), nullable=False)
+    product_id = database.Column(database.Integer, database.ForeignKey("products.id"), nullable=False)
+    quantity = database.Column(database.Integer, nullable=False)
+
+    order = database.relationship("Order", back_populates="items")
+    product = database.relationship("Product", back_populates="items")

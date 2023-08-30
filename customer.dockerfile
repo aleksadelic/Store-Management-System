@@ -3,7 +3,7 @@ FROM python:3
 RUN mkdir -p /opt/src/applications
 WORKDIR /opt/src/applications
 
-COPY applications/customer/application.py ./application.py
+COPY applications/application_customer.py ./application.py
 COPY applications/configuration.py ./configuration.py
 COPY applications/models.py ./models.py
 COPY applications/requirements.txt ./requirements.txt

@@ -1,8 +1,9 @@
 from datetime import timedelta
 import os
 
-database_url = os.environ["DATABASE_URL"]
-# database_url = "localhost:3307"
+database_url = "localhost:3307"
+if "DATABASE_URL" in os.environ:
+    database_url = os.environ["DATABASE_URL"]
 
 
 class Configuration:
