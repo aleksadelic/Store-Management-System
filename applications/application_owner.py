@@ -1,5 +1,5 @@
 from flask import Flask, request, Response, jsonify
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, desc, null
 
 from configuration import Configuration
 from models import database, Product, Category, ProductCategory, Order, Item
@@ -59,8 +59,17 @@ def update():
         categories = line[0].split("|")
         for category in categories:
             cat = Category.query.filter(Category.name == category).first()
-            product_category = ProductCategory(product_id=product.id, category_id=cat.id)
-            database.session.add(product_category)
+
+            if cat is not None:
+                product_category = ProductCategory(product_id=product.id, category_id=cat.id)
+                database.session.add(product_category)
+            else:
+                new_category = Category(name=category)
+                database.session.add(new_category)
+                database.session.commit()
+                product_category = ProductCategory(product_id=product.id, category_id=new_category.id)
+                database.session.add(product_category)
+
             database.session.commit()
 
     return Response(status=200)
@@ -82,9 +91,6 @@ def product_statistics():
     ).join(Item.product).join(Item.order).filter(or_(Order.status == "CREATED", Order.status == "PENDING")). \
         group_by(Product.id).all()
 
-    print(sold_items)
-    print(pending_items)
-
     items = {}
     for item in sold_items:
         items[item.name] = [int(item.sold), 0]
@@ -102,6 +108,27 @@ def product_statistics():
             "sold": counts[0],
             "waiting": counts[1]
         })
+
+    return jsonify(statistics=statistics), 200
+
+
+@application.route("/category_statistics", methods=["GET"])
+@jwt_required()
+@role_check(role="owner")
+def category_statistics():
+    sold_by_category = database.session.query(
+        Category.name,
+        func.coalesce(func.sum(Item.quantity), 0).label("sold")
+    ).join(Category.products).join(Product.items).join(Item.order).filter(Order.status == "COMPLETE") \
+        .group_by(Category.id).order_by(desc("sold"), Category.name).all()
+
+    statistics = [row[0] for row in sold_by_category]
+
+    all_categories = database.session.query(Category.name).order_by(Category.name).all()
+
+    for cat in all_categories:
+        if cat[0] not in statistics:
+            statistics.append(cat[0])
 
     return jsonify(statistics=statistics), 200
 

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, Response
 from configuration import Configuration
 from models import database, Product, Category, ProductCategory, Order, Item
-from sqlalchemy import and_
+from sqlalchemy import and_, distinct
 from flask_jwt_extended import JWTManager, jwt_required, get_jwt_identity
 from role_check_decorator import role_check
 import datetime
@@ -28,11 +28,13 @@ def search():
         and_(Product.name.like("%{}%".format(name)), Category.name.like("%{}%".format(category)))
     ).all()
 
-    category_response = set()
-    for prod in products:
-        cats = Category.query.join(ProductCategory).filter(ProductCategory.product_id == prod.id).all()
-        for cat in cats:
-            category_response.add(str(cat))
+    categories = database.session.query(
+        distinct(Category.name)
+    ).join(Product.categories).filter(
+        and_(Product.name.like("%{}%".format(name)), Category.name.like("%{}%".format(category)))
+    ).all()
+
+    categories_response = [cat[0] for cat in categories]
 
     product_response = []
     for product in products:
@@ -45,7 +47,7 @@ def search():
         }
         product_response.append(product_json)
 
-    return jsonify(categories=list(category_response), products=product_response), 200
+    return jsonify(categories=categories_response, products=product_response), 200
 
 
 @application.route("/order", methods=["POST"])

@@ -18,11 +18,3 @@ with application.app_context() as context:
     init()
     migrate(message="Production migration")
     upgrade()
-
-    categories = []
-    for i in range(10):
-        cat = Category(name="Category{}".format(i))
-        categories.append(cat)
-
-    database.session.add_all(categories)
-    database.session.commit()
